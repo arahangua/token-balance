@@ -69,5 +69,5 @@ with Progress() as progress:
 
 # concat and save
 res_df = pd.concat(result_list)
-res_df.to_csv('uniq_addrs.csv', index=False)
+res_df.to_csv('../uniq_addrs.csv', index=False)
 print(f'getting unique addresses based on xblock data done: n_addrs: {len(res_df)}, start_block: {block_start}, end_block: {block_end}')
