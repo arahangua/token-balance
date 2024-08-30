@@ -38,7 +38,6 @@ def get_participants(web3, start_block, end_block, batch_size=100):
     loop = asyncio.get_event_loop()
     return loop.run_until_complete(get_participants_async(web3, start_block, end_block, batch_size))
 
-import asyncio
 
 async def process_batch_async(web3, contract, participants, start_block, end_block, wei_threshold):
     """Process a batch of blocks asynchronously and return balance data."""
