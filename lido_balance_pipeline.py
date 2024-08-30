@@ -2,8 +2,8 @@ import asyncio
 import csv
 import pandas as pd
 from tqdm import tqdm
-from config import START_BLOCK, END_BLOCK, BATCH_SIZE, OUTPUT_FILE, LIDO_TOKEN_ADDRESS, USE_PRECOMPUTED_LIST, WEI_THRESHOLD, BLOCK_STEP_SIZE
-from utils import get_web3, get_lido_contract, get_balances_batch, wei_to_ether
+from config import START_BLOCK, END_BLOCK, BATCH_SIZE, OUTPUT_FILE, TOKEN_ADDRESS, USE_PRECOMPUTED_LIST, WEI_THRESHOLD, BLOCK_STEP_SIZE
+from utils import get_web3, get_token_contract, get_balances_batch, wei_to_ether
 from decimal import Decimal
 
 async def fetch_block(web3, block_number):
@@ -20,14 +20,14 @@ async def fetch_blocks(web3, start_block, end_block):
     return await asyncio.gather(*tasks)
 
 async def get_participants_async(web3, start_block, end_block, batch_size=100):
-    """Get unique addresses that interacted with the Lido contract using batched processing."""
+    """Get unique addresses that interacted with the token contract using batched processing."""
     participants = set()
     for batch_start in range(start_block, end_block + 1, batch_size):
         batch_end = min(batch_start + batch_size - 1, end_block)
         blocks = await fetch_blocks(web3, batch_start, batch_end)
         for block in blocks:
             for tx in block['transactions']:
-                if tx['to'] == LIDO_TOKEN_ADDRESS:
+                if tx['to'] == TOKEN_ADDRESS:
                     participants.add(tx['from'])
     return list(participants)
 
@@ -54,7 +54,7 @@ async def process_batch_async(web3, contract, participants, start_block, end_blo
 
 async def main():
     web3 = get_web3()
-    contract = get_lido_contract(web3)
+    contract = get_token_contract(web3)
     
     if USE_PRECOMPUTED_LIST:
         participants_df = pd.read_csv('uniq_addrs.csv')

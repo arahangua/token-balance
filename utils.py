@@ -1,6 +1,6 @@
 from web3 import Web3
 from web3.exceptions import ContractLogicError
-from config import ETHEREUM_NODE_URL, LIDO_TOKEN_ADDRESS
+from config import ETHEREUM_NODE_URL, TOKEN_ADDRESS
 
 # Ethereum mainnet Multicall contract address
 MULTICALL_ADDRESS = '0xeefBa1e63905eF1D7ACbA5a8513c70307C1cE441'
@@ -9,10 +9,10 @@ def get_web3():
     """Initialize and return a Web3 instance."""
     return Web3(Web3.HTTPProvider(ETHEREUM_NODE_URL))
 
-def get_lido_contract(web3):
-    """Return the Lido stETH token contract."""
+def get_token_contract(web3):
+    """Return the token contract."""
     abi = [{"constant":True,"inputs":[{"name":"_owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"balance","type":"uint256"}],"type":"function"}]
-    return web3.eth.contract(address=LIDO_TOKEN_ADDRESS, abi=abi)
+    return web3.eth.contract(address=TOKEN_ADDRESS, abi=abi)
 
 def get_balances_batch(web3, contract, addresses, block):
     """Get balances for multiple addresses at a specific block using multicall."""
