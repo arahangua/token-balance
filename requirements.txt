@@ -252,3 +252,4 @@ yarl==1.9.4
 zict @ file:///work/perseverance-python-buildout/croot/zict_1698876364831/work
 zipp==3.20.1
 zstandard @ file:///work/perseverance-python-buildout/croot/zstandard_1698847073368/work
+web3==5.31.3
