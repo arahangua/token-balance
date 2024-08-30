@@ -1,6 +1,6 @@
 import csv
 from web3 import Web3
-from config import START_BLOCK, END_BLOCK, BATCH_SIZE, OUTPUT_FILE
+from config import START_BLOCK, END_BLOCK, BATCH_SIZE, OUTPUT_FILE, LIDO_TOKEN_ADDRESS
 from utils import get_web3, get_lido_contract, get_balance, wei_to_ether
 
 def get_participants(web3, start_block, end_block):
