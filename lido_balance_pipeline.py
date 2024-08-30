@@ -2,9 +2,8 @@ import asyncio
 import csv
 import pandas as pd
 from tqdm import tqdm
-from config import START_BLOCK, END_BLOCK, BATCH_SIZE, OUTPUT_FILE, LIDO_TOKEN_ADDRESS
+from config import START_BLOCK, END_BLOCK, BATCH_SIZE, OUTPUT_FILE, LIDO_TOKEN_ADDRESS, USE_PRECOMPUTED_LIST, WEI_THRESHOLD
 from utils import get_web3, get_lido_contract, get_balances_batch, wei_to_ether
-import argparse
 from decimal import Decimal
 
 async def fetch_block(web3, block_number):
@@ -39,7 +38,7 @@ def get_participants(web3, start_block, end_block, batch_size=100):
     return loop.run_until_complete(get_participants_async(web3, start_block, end_block, batch_size))
 
 
-async def process_batch_async(web3, contract, participants, start_block, end_block, wei_threshold):
+async def process_batch_async(web3, contract, participants, start_block, end_block):
     """Process a batch of blocks asynchronously and return balance data."""
     balances = []
     for block in range(start_block, end_block + 1):
@@ -47,16 +46,16 @@ async def process_batch_async(web3, contract, participants, start_block, end_blo
         non_zero_balances = {
             address: wei_to_ether(balance)
             for address, balance in zip(participants, block_balances)
-            if balance >= wei_threshold
+            if balance >= WEI_THRESHOLD
         }
         balances.append((block, non_zero_balances))
     return balances
 
-async def main(use_precomputed_list=False, wei_threshold=1):
+async def main():
     web3 = get_web3()
     contract = get_lido_contract(web3)
     
-    if use_precomputed_list:
+    if USE_PRECOMPUTED_LIST:
         participants_df = pd.read_csv('uniq_addrs.csv')
         participants = participants_df['address'].tolist()
         print(f"Using precomputed list with {len(participants)} participants")
@@ -76,7 +75,7 @@ async def main(use_precomputed_list=False, wei_threshold=1):
             for batch_start in range(START_BLOCK, END_BLOCK + 1, BATCH_SIZE):
                 batch_end = min(batch_start + BATCH_SIZE - 1, END_BLOCK)
                 
-                task = asyncio.create_task(process_batch_async(web3, contract, participants, batch_start, batch_end, wei_threshold))
+                task = asyncio.create_task(process_batch_async(web3, contract, participants, batch_start, batch_end))
                 tasks.append(task)
             
             results = await asyncio.gather(*tasks)
@@ -91,9 +90,4 @@ async def main(use_precomputed_list=False, wei_threshold=1):
     print(f"Pipeline completed. Results written to {OUTPUT_FILE}")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Lido Balance Pipeline")
-    parser.add_argument('--use-precomputed', action='store_true', help="Use precomputed participants list from uniq_addrs.csv")
-    parser.add_argument('--wei-threshold', type=int, default=1, help="Minimum balance in wei to include in results")
-    args = parser.parse_args()
-    
-    asyncio.run(main(use_precomputed_list=args.use_precomputed, wei_threshold=args.wei_threshold))
+    asyncio.run(main())

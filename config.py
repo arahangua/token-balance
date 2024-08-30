@@ -13,3 +13,7 @@ BATCH_SIZE = 1000
 
 # Output file path
 OUTPUT_FILE = "lido_token_balances.csv"
+
+# Pipeline configuration
+USE_PRECOMPUTED_LIST = False
+WEI_THRESHOLD = 1
