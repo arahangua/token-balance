@@ -1,4 +1,4 @@
-# lido-balance# Lido Balance Pipeline
+# Pipeline for getting Lido account balances
 
 This project implements a pipeline to fetch and process Lido staking balances on the Ethereum network.
 
@@ -17,7 +17,7 @@ This project implements a pipeline to fetch and process Lido staking balances on
    ```
    pip install -r requirements.txt
    ```
-3. Set up your environment variables (if necessary)
+3. Set up your environment variables (look into 'config.py' file)
 
 ## Usage
 
