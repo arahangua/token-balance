@@ -4,12 +4,12 @@ from config import START_BLOCK, END_BLOCK, BATCH_SIZE, OUTPUT_FILE, LIDO_TOKEN_A
 from utils import get_web3, get_lido_contract, get_balances_batch, wei_to_ether
 
 def get_participants(web3, start_block, end_block, batch_size=100):
-    """Get unique addresses that interacted with the Lido contract using batched get_block calls."""
+    """Get unique addresses that interacted with the Lido contract using batched processing."""
     participants = set()
     for batch_start in range(start_block, end_block + 1, batch_size):
         batch_end = min(batch_start + batch_size - 1, end_block)
-        blocks = web3.eth.get_blocks(range(batch_start, batch_end + 1), full_transactions=True)
-        for block in blocks:
+        for block_number in range(batch_start, batch_end + 1):
+            block = web3.eth.get_block(block_number, full_transactions=True)
             for tx in block['transactions']:
                 if tx['to'] == LIDO_TOKEN_ADDRESS:
                     participants.add(tx['from'])
