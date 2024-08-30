@@ -19,13 +19,9 @@ async def fetch_blocks(web3, start_block, end_block):
 async def get_participants_async(web3, start_block, end_block, batch_size=100):
     """Get unique addresses that interacted with the Lido contract using batched processing."""
     participants = set()
-    tasks = []
     for batch_start in range(start_block, end_block + 1, batch_size):
         batch_end = min(batch_start + batch_size - 1, end_block)
-        tasks.append(fetch_blocks(web3, batch_start, batch_end))
-    
-    all_blocks = await asyncio.gather(*tasks)
-    for blocks in all_blocks:
+        blocks = await fetch_blocks(web3, batch_start, batch_end)
         for block in blocks:
             for tx in block['transactions']:
                 if tx['to'] == LIDO_TOKEN_ADDRESS:
@@ -41,14 +37,16 @@ def get_participants(web3, start_block, end_block, batch_size=100):
 async def process_batch_async(web3, contract, participants, start_block, end_block):
     """Process a batch of blocks asynchronously and return balance data."""
     balances = []
-    for block in range(start_block, end_block + 1, BLOCK_STEP_SIZE):
-        block_balances = await asyncio.to_thread(get_balances_batch, web3, contract, participants, block)
+    blocks = await fetch_blocks(web3, start_block, end_block)
+    for block in blocks:
+        block_number = block['number']
+        block_balances = await asyncio.to_thread(get_balances_batch, web3, contract, participants, block_number)
         non_zero_balances = {
             address: wei_to_ether(balance)
             for address, balance in zip(participants, block_balances)
             if balance >= WEI_THRESHOLD
         }
-        balances.append((block, non_zero_balances))
+        balances.append((block_number, non_zero_balances))
     return balances
 
 async def main():
@@ -84,7 +82,8 @@ async def main():
                 for block, balances in batch_balances:
                     for address, balance in balances.items():
                         writer.writerow([block, address, balance])
-                    progress_bar.update(1)
+                    if (block - START_BLOCK) % BLOCK_STEP_SIZE == 0:
+                        progress_bar.update(1)
 
     progress_bar.close()
     print(f"Pipeline completed. Results written to {OUTPUT_FILE}")
