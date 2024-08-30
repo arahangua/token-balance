@@ -13,7 +13,10 @@ async def fetch_block(web3, block_number):
 
 async def fetch_blocks(web3, start_block, end_block):
     """Fetch multiple blocks concurrently using BLOCK_STEP_SIZE intervals."""
-    tasks = [fetch_block(web3, block_number) for block_number in range(start_block, end_block + 1, BLOCK_STEP_SIZE)]
+    tasks = []
+    for block_number in range(start_block, end_block + 1, BLOCK_STEP_SIZE):
+        if block_number <= end_block:
+            tasks.append(fetch_block(web3, block_number))
     return await asyncio.gather(*tasks)
 
 async def get_participants_async(web3, start_block, end_block, batch_size=100):
