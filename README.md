@@ -1,10 +1,10 @@
-# Pipeline for getting Lido account balances
+# Token Balance Pipeline
 
-This project implements a pipeline to fetch and process Lido staking balances on the Ethereum network.
+This project implements a pipeline to fetch and process token balances on the Ethereum network, with a focus on Lido staking balances.
 
 ## Files in the Repository
 
-- `lido_balance_pipeline.py`: Main script for fetching and processing Lido balances.
+- `lido_balance_pipeline.py`: Main script for fetching and processing token balances (currently focused on Lido).
 - `utils.py`: Utility functions for web3 interactions and balance calculations.
 - `config.py`: Configuration settings for the project.
 - `.gitignore`: Specifies intentionally untracked files to ignore.
