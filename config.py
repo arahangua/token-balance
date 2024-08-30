@@ -17,3 +17,4 @@ OUTPUT_FILE = "lido_token_balances.csv"
 # Pipeline configuration
 USE_PRECOMPUTED_LIST = False
 WEI_THRESHOLD = 1
+BLOCK_STEP_SIZE = 100  # Interval between blocks to collect data

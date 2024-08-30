@@ -2,7 +2,7 @@ import asyncio
 import csv
 import pandas as pd
 from tqdm import tqdm
-from config import START_BLOCK, END_BLOCK, BATCH_SIZE, OUTPUT_FILE, LIDO_TOKEN_ADDRESS, USE_PRECOMPUTED_LIST, WEI_THRESHOLD
+from config import START_BLOCK, END_BLOCK, BATCH_SIZE, OUTPUT_FILE, LIDO_TOKEN_ADDRESS, USE_PRECOMPUTED_LIST, WEI_THRESHOLD, BLOCK_STEP_SIZE
 from utils import get_web3, get_lido_contract, get_balances_batch, wei_to_ether
 from decimal import Decimal
 
@@ -41,7 +41,7 @@ def get_participants(web3, start_block, end_block, batch_size=100):
 async def process_batch_async(web3, contract, participants, start_block, end_block):
     """Process a batch of blocks asynchronously and return balance data."""
     balances = []
-    for block in range(start_block, end_block + 1):
+    for block in range(start_block, end_block + 1, BLOCK_STEP_SIZE):
         block_balances = await asyncio.to_thread(get_balances_batch, web3, contract, participants, block)
         non_zero_balances = {
             address: wei_to_ether(balance)
@@ -63,7 +63,7 @@ async def main():
         participants = await get_participants_async(web3, START_BLOCK, END_BLOCK)
         print(f"Found {len(participants)} participants")
 
-    total_blocks = END_BLOCK - START_BLOCK + 1
+    total_blocks = (END_BLOCK - START_BLOCK) // BLOCK_STEP_SIZE + 1
     progress_bar = tqdm(total=total_blocks, desc="Processing blocks", unit="block")
 
     async with asyncio.Lock():
