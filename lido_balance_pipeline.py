@@ -1,31 +1,35 @@
 import csv
 import asyncio
-import aiohttp
+from concurrent.futures import ThreadPoolExecutor
 from web3 import Web3
 from config import START_BLOCK, END_BLOCK, BATCH_SIZE, OUTPUT_FILE, LIDO_TOKEN_ADDRESS
 from utils import get_web3, get_lido_contract, get_balances_batch, wei_to_ether
 
-async def fetch_block(session, web3, block_number):
+async def fetch_block(web3, block_number):
     """Fetch a single block asynchronously."""
-    return await web3.eth.get_block(block_number, full_transactions=True)
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, web3.eth.get_block, block_number, True)
 
 async def fetch_blocks(web3, start_block, end_block):
     """Fetch multiple blocks concurrently."""
-    async with aiohttp.ClientSession() as session:
-        tasks = [fetch_block(session, web3, block_number) for block_number in range(start_block, end_block + 1)]
-        return await asyncio.gather(*tasks)
+    tasks = [fetch_block(web3, block_number) for block_number in range(start_block, end_block + 1)]
+    return await asyncio.gather(*tasks)
 
-def get_participants(web3, start_block, end_block, batch_size=100):
+async def get_participants_async(web3, start_block, end_block, batch_size=100):
     """Get unique addresses that interacted with the Lido contract using batched processing."""
     participants = set()
     for batch_start in range(start_block, end_block + 1, batch_size):
         batch_end = min(batch_start + batch_size - 1, end_block)
-        blocks = asyncio.run(fetch_blocks(web3, batch_start, batch_end))
+        blocks = await fetch_blocks(web3, batch_start, batch_end)
         for block in blocks:
             for tx in block['transactions']:
                 if tx['to'] == LIDO_TOKEN_ADDRESS:
                     participants.add(tx['from'])
     return list(participants)
+
+def get_participants(web3, start_block, end_block, batch_size=100):
+    """Wrapper function to run the async get_participants_async function."""
+    return asyncio.run(get_participants_async(web3, start_block, end_block, batch_size))
 
 def process_batch(web3, contract, participants, start_block, end_block):
     """Process a batch of blocks and return balance data."""
