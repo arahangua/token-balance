@@ -1,7 +1,7 @@
 import csv
 from web3 import Web3
 from config import START_BLOCK, END_BLOCK, BATCH_SIZE, OUTPUT_FILE, LIDO_TOKEN_ADDRESS
-from utils import get_web3, get_lido_contract, get_balance, wei_to_ether
+from utils import get_web3, get_lido_contract, get_balances_batch, wei_to_ether
 
 def get_participants(web3, start_block, end_block):
     """Get unique addresses that interacted with the Lido contract."""
@@ -17,12 +17,13 @@ def process_batch(web3, contract, participants, start_block, end_block):
     """Process a batch of blocks and return balance data."""
     balances = []
     for block in range(start_block, end_block + 1):
-        block_balances = {}
-        for address in participants:
-            balance = get_balance(contract, address, block)
-            if balance > 0:
-                block_balances[address] = wei_to_ether(balance)
-        balances.append((block, block_balances))
+        block_balances = get_balances_batch(web3, contract, participants, block)
+        non_zero_balances = {
+            address: wei_to_ether(balance)
+            for address, balance in zip(participants, block_balances)
+            if balance > 0
+        }
+        balances.append((block, non_zero_balances))
     return balances
 
 def main():
