@@ -1,8 +1,10 @@
 import asyncio
 import csv
+import pandas as pd
 from tqdm import tqdm
 from config import START_BLOCK, END_BLOCK, BATCH_SIZE, OUTPUT_FILE, LIDO_TOKEN_ADDRESS
 from utils import get_web3, get_lido_contract, get_balances_batch, wei_to_ether
+import argparse
 
 async def fetch_block(web3, block_number):
     """Fetch a single block asynchronously."""
@@ -45,17 +47,22 @@ async def process_batch_async(web3, contract, participants, start_block, end_blo
         non_zero_balances = {
             address: wei_to_ether(balance)
             for address, balance in zip(participants, block_balances)
-            if balance > 0
+            if balance > 1e-18  # Check if balance is greater than 1e-18 (1 wei)
         }
         balances.append((block, non_zero_balances))
     return balances
 
-async def main():
+async def main(use_precomputed_list=False):
     web3 = get_web3()
     contract = get_lido_contract(web3)
     
-    participants = await get_participants_async(web3, START_BLOCK, END_BLOCK)
-    print(f"Found {len(participants)} participants")
+    if use_precomputed_list:
+        participants_df = pd.read_csv('uniq_addrs.csv')
+        participants = participants_df['address'].tolist()
+        print(f"Using precomputed list with {len(participants)} participants")
+    else:
+        participants = await get_participants_async(web3, START_BLOCK, END_BLOCK)
+        print(f"Found {len(participants)} participants")
 
     total_blocks = END_BLOCK - START_BLOCK + 1
     progress_bar = tqdm(total=total_blocks, desc="Processing blocks", unit="block")
@@ -77,11 +84,16 @@ async def main():
             for batch_balances in results:
                 for block, balances in batch_balances:
                     for address, balance in balances.items():
-                        writer.writerow([block, address, balance])
+                        if balance > 1e-18:  # Check if balance is greater than 1e-18 (1 wei)
+                            writer.writerow([block, address, balance])
                     progress_bar.update(1)
 
     progress_bar.close()
     print(f"Pipeline completed. Results written to {OUTPUT_FILE}")
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    parser = argparse.ArgumentParser(description="Lido Balance Pipeline")
+    parser.add_argument('--use-precomputed', action='store_true', help="Use precomputed participants list from uniq_addrs.csv")
+    args = parser.parse_args()
+    
+    asyncio.run(main(use_precomputed_list=args.use_precomputed))
