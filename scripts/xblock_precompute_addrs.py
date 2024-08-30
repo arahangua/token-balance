@@ -37,17 +37,21 @@ target_contract = "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84"
 # get xblock external transaction files 
 xb_root = '/local/scratch/XBlock_dataset'
 
-# get exported block data
-bl_info_paths_zipped = glob.glob(f'{xb_root}/*to*_BlockTransaction.zip')
+# get exported block data (zipped file)
+# bl_info_paths = glob.glob(f'{xb_root}/*to*_BlockTransaction.zip')
+
+# get exported block data (unzipped case)
+bl_info_paths = glob.glob(f'{xb_root}/*to*_BlockTransaction/*to*_BlockTransaction.csv')
+
 
 # get valid files 
-st_bls = np.array(list(map(lambda x:x.split('/')[-1].split('_')[0].split('to')[0], bl_info_paths_zipped))).astype(int)
-ed_bls = np.array(list(map(lambda x:x.split('/')[-1].split('_')[0].split('to')[1], bl_info_paths_zipped))).astype(int)
+st_bls = np.array(list(map(lambda x:x.split('/')[-1].split('_')[0].split('to')[0], bl_info_paths))).astype(int)
+ed_bls = np.array(list(map(lambda x:x.split('/')[-1].split('_')[0].split('to')[1], bl_info_paths))).astype(int)
 
-valid_zip_files = np.array(bl_info_paths_zipped)[(st_bls>=block_start) & (ed_bls<=block_end)]
+valid_zip_files = np.array(bl_info_paths)[(st_bls>=block_start) & (ed_bls<=block_end)]
 
-# dask delayed function to get all unique addresses that call target contract 
-def process_path(valid_zip_file):
+# when considering zipped file
+def process_path_zipped(valid_zip_file):
     with ZipFile(valid_zip_file) as zf:
         # zf.namelist()
         csv_file = [file for file in zf.namelist() if file.endswith('.csv')]
@@ -56,6 +60,16 @@ def process_path(valid_zip_file):
         lowered = target_contract.lower()
         df = df[df['to']==lowered]
     return pd.DataFrame(df['from'].unique(), columns=['address'])
+
+
+
+# we assume zip files were unzipped. use dask to get all unique addresses that call target contract 
+def process_path(valid_zip_file):
+    ddf = dd.read_csv(valid_zip_file)
+    #get all rows that has target_contract
+    lowered = target_contract.lower()
+    ddf = ddf[ddf['to']==lowered]
+    return pd.DataFrame(ddf['from'].unique().compute(), columns=['address'])
 
 
 # run it
@@ -69,5 +83,6 @@ with Progress() as progress:
 
 # concat and save
 res_df = pd.concat(result_list)
-res_df.to_csv('../uniq_addrs.csv', index=False)
+res_df.to_csv('uniq_addrs.csv', index=False)
 print(f'getting unique addresses based on xblock data done: n_addrs: {len(res_df)}, start_block: {block_start}, end_block: {block_end}')
+
