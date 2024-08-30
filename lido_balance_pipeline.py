@@ -29,7 +29,8 @@ async def get_participants_async(web3, start_block, end_block, batch_size=100):
 
 def get_participants(web3, start_block, end_block, batch_size=100):
     """Wrapper function to run the async get_participants_async function."""
-    return asyncio.run(get_participants_async(web3, start_block, end_block, batch_size))
+    loop = asyncio.get_event_loop()
+    return loop.run_until_complete(get_participants_async(web3, start_block, end_block, batch_size))
 
 def process_batch(web3, contract, participants, start_block, end_block):
     """Process a batch of blocks and return balance data."""
@@ -44,11 +45,11 @@ def process_batch(web3, contract, participants, start_block, end_block):
         balances.append((block, non_zero_balances))
     return balances
 
-def main():
+async def main():
     web3 = get_web3()
     contract = get_lido_contract(web3)
     
-    participants = get_participants(web3, START_BLOCK, END_BLOCK)
+    participants = await get_participants_async(web3, START_BLOCK, END_BLOCK)
     print(f"Found {len(participants)} participants")
 
     with open(OUTPUT_FILE, 'w', newline='') as csvfile:
@@ -68,4 +69,4 @@ def main():
     print(f"Pipeline completed. Results written to {OUTPUT_FILE}")
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
