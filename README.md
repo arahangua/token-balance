@@ -4,7 +4,7 @@ This project implements a pipeline to fetch and process token balances on the Et
 
 ## Files in the Repository
 
-- `token_balance_pipeline.py`: Main script for fetching and processing token balances (currently focused on Lido).
+- `token_balance_pipeline.py`: Main script for fetching and processing token balances (currently, we consider Lido).
 - `utils.py`: Utility functions for web3 interactions and balance calculations.
 - `config.py`: Configuration settings for the project.
 - `.gitignore`: Specifies intentionally untracked files to ignore.
